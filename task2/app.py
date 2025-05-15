@@ -34,7 +34,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- Models (exact column names preserved) ---
 
 class Author(db.Model):
     __tablename__ = 'author'
@@ -70,6 +69,24 @@ class Book(db.Model):
     publisher = db.relationship('Publisher', backref='books')
     genre = db.relationship('Genre', backref='books')
 
+class Borrower(db.Model):
+    __tablename__ = 'borrower'
+    BorrowerID = db.Column(db.String(5), primary_key=True)
+    BID = db.Column(db.String(5), db.ForeignKey('books.BID'), nullable=False)
+    borrower_name = db.Column(db.String(25), nullable=False)
+    borrower_date = db.Column(db.Date, nullable=False)
+    return_date = db.Column(db.Date, nullable=False)
+
+    book = db.relationship('Book', backref='borrowers')
+
+
+class Librarian(db.Model):
+    __tablename__ = 'librarian'
+    librarianID = db.Column(db.String(5), primary_key=True)
+    librarian_name = db.Column(db.String(25), nullable=False)
+    shift = db.Column(db.String(10))
+    hire_date = db.Column(db.Date)
+
 # --- Routes ---
 
 @app.route('/')
@@ -97,7 +114,7 @@ def get_books():
         return jsonify(results)
     except Exception as e:
         logging.exception("Error fetching books")
-        # This is the key line to add:
+        
         return jsonify({'error': str(e)}), 500
 
 
