@@ -1,123 +1,146 @@
 from flask import Flask, render_template, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import configparser
 import requests
 import logging
-from flask_cors import CORS
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 CORS(app)
 
-# Configure logging to DEBUG level for detailed logs
-logging.basicConfig(
-    level=logging.DEBUG,  # Changed from INFO to DEBUG
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+# Logging setup
+logging.basicConfig(level=logging.DEBUG)
 
-# Load the configuration from the config.ini file
+# Config loading
 config = configparser.ConfigParser()
-config.read('config.ini')
 
-# Get the API key and URL from the configuration
-try:
-    GEMINI_API_KEY = config.get('API', 'GEMINI_API_KEY')
-    GEMINI_API_URL = config.get('API', 'GEMINI_API_URL')
-    logging.info("Gemini API configuration loaded successfully.")
-except Exception as e:
-    logging.error("Error reading config.ini: %s", e)
-    GEMINI_API_KEY = None
-    GEMINI_API_URL = None
+config.read(r'C:\Users\prite\library_management_task\config.ini')
+print("Sections loaded from config:", config.sections())
 
-# Route to serve the home page
+
+# Gemini API
+GEMINI_API_KEY = config.get('API', 'GEMINI_API_KEY', fallback=None)
+GEMINI_API_URL = config.get('API', 'GEMINI_API_URL', fallback=None)
+
+# Database setup
+DB_NAME = config.get('DB', 'DB_NAME')
+DB_USER = config.get('DB', 'DB_USER')
+DB_PASSWORD = config.get('DB', 'DB_PASSWORD')
+DB_HOST = config.get('DB', 'DB_HOST')
+DB_PORT = config.get('DB', 'DB_PORT')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# --- Models (exact column names preserved) ---
+
+class Author(db.Model):
+    __tablename__ = 'author'
+    authID = db.Column(db.String(5), primary_key=True)
+    auth_name = db.Column(db.String(25), nullable=False)
+    auth_desc = db.Column(db.String(250))
+
+
+class Publisher(db.Model):
+    __tablename__ = 'publisher'
+    pubID = db.Column(db.String(5), primary_key=True)
+    pub_name = db.Column(db.String(25), nullable=False)
+    pub_desc = db.Column(db.String(250))
+
+
+class Genre(db.Model):
+    __tablename__ = 'genre'
+    genreID = db.Column(db.String(5), primary_key=True)
+    genre_name = db.Column(db.String(15), nullable=False)
+    genre_desc = db.Column(db.String(250))
+
+
+class Book(db.Model):
+    __tablename__ = 'books'
+    BID = db.Column(db.String(5), primary_key=True)
+    authID = db.Column(db.String(5), db.ForeignKey('author.authID'), nullable=False)
+    pubID = db.Column(db.String(5), db.ForeignKey('publisher.pubID'), nullable=False)
+    genreID = db.Column(db.String(5), db.ForeignKey('genre.genreID'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    available = db.Column(db.Boolean)
+
+    author = db.relationship('Author', backref='books')
+    publisher = db.relationship('Publisher', backref='books')
+    genre = db.relationship('Genre', backref='books')
+
+# --- Routes ---
+
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# Route to serve viewer.html
+
 @app.route('/viewer.html')
 def viewer():
     return render_template('viewer.html')
 
-# API route to fetch description from Gemini API
+
+@app.route('/api/books', methods=['GET'])
+def get_books():
+    try:
+        books = Book.query.all()
+        results = [{
+            'BID': book.BID,
+            'title': book.title,
+            'available': book.available,
+            'author': book.author.auth_name if book.author else 'N/A',
+            'publisher': book.publisher.pub_name if book.publisher else 'N/A',
+            'genre': book.genre.genre_name if book.genre else 'N/A'
+        } for book in books]
+        return jsonify(results)
+    except Exception as e:
+        logging.exception("Error fetching books")
+        # This is the key line to add:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/description', methods=['GET'])
 def get_description():
     entity_name = request.args.get('name')
-    logging.debug(f"Received request for entity name: {entity_name}")  # Changed to DEBUG
-
     if not entity_name:
-        logging.warning("Missing entity name in request.")
         return jsonify({'error': 'Missing entity name'}), 400
 
-    if not GEMINI_API_URL or not GEMINI_API_KEY:
-        logging.error("Gemini API configuration missing.")
-        return jsonify({'error': 'Server configuration error'}), 500
+    if not GEMINI_API_KEY or not GEMINI_API_URL:
+        return jsonify({'error': 'Gemini API configuration missing'}), 500
 
-    # Prepare the JSON payload with explicit instructions
+    prompt = (
+        f"Provide a detailed description of '{entity_name}'. "
+        "If it is a book include information about the setting, characters, themes, key concepts, and its influence. "
+        "Do not include any concluding remarks or questions. "
+        "Do not mention any Note at the end about not including concluding remarks or questions."
+    )
+
     payload = {
         "contents": [
-            {
-                "parts": [
-                    {
-                        "text": (
-                            f"Provide a detailed description of '{entity_name}'"
-                            "If it is a book include information about the setting, characters, themes, key concepts, and its influence. "
-                            "Do not include any concluding remarks or questions."
-                            "Do not mention any Note at the end about not including concluding remarks or questions."
-                        )
-                    }
-                ]
-            }
+            {"parts": [{"text": prompt}]}
         ]
     }
 
-    # Construct the API URL with the API key as a query parameter
-    api_url_with_key = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
-
-    headers = {
-        "Content-Type": "application/json"
-    }
-
-    # Log the API URL and payload for debugging
-    logging.debug(f"API URL: {api_url_with_key}")
-    logging.debug(f"Payload: {payload}")
-
     try:
-        # Make the POST request to the Gemini API
         response = requests.post(
-            api_url_with_key,  # Include the API key in the URL
-            headers=headers,
+            f"{GEMINI_API_URL}?key={GEMINI_API_KEY}",
             json=payload,
-            timeout=10  # seconds
+            headers={"Content-Type": "application/json"},
+            timeout=10
         )
-        logging.debug(f"Gemini API response status: {response.status_code}")  # Changed to DEBUG
-
         if response.status_code != 200:
-            logging.error(f"Failed to fetch description from Gemini API. Status code: {response.status_code}")
-            logging.error(f"Response content: {response.text}")
-            return jsonify({
-                'error': 'Failed to fetch description from Gemini API',
-                'status_code': response.status_code,
-                'response': response.text
-            }), 500
+            logging.error("Gemini API error: %s", response.text)
+            return jsonify({'error': 'Failed to get description from Gemini'}), 500
 
-        response_data = response.json()
-        # Extract the description from the response
-        description = response_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', 'No description available.')
-        logging.debug(f"Fetched description: {description}")  # Changed to DEBUG
-
+        data = response.json()
+        description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         return jsonify({'description': description})
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Exception during Gemini API request: {e}")
-        return jsonify({'error': 'Failed to connect to Gemini API', 'message': str(e)}), 500
-    except ValueError as e:
-        logging.error(f"JSON decoding failed: {e}")
-        return jsonify({'error': 'Invalid JSON response from Gemini API', 'message': str(e)}), 500
     except Exception as e:
-        logging.exception(f"Unexpected error: {e}")
-        return jsonify({'error': 'An unexpected error occurred', 'message': str(e)}), 500
+        logging.exception("Error connecting to Gemini API")
+        return jsonify({'error': 'Internal server error'}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
