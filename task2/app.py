@@ -1,6 +1,8 @@
 from flask import Flask, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from datetime import date
+from flask import jsonify
 import configparser
 import requests
 import logging
@@ -101,24 +103,85 @@ def viewer():
     return render_template('viewer.html')
 
 
-@app.route('/api/books', methods=['GET'])
+@app.route('/api/books')
 def get_books():
-    try:
-        books = Book.query.all()
-        results = [{
-            'BID': book.BID,
-            'title': book.title,
-            'available': book.available,
-            'author': book.author.auth_name if book.author else 'N/A',
-            'publisher': book.publisher.pub_name if book.publisher else 'N/A',
-            'genre': book.genre.genre_name if book.genre else 'N/A'
-        } for book in books]
-        return jsonify(results)
-    except Exception as e:
-        logging.exception("Error fetching books")
-        
-        return jsonify({'error': str(e)}), 500
+    books = (
+        db.session.query(
+            Book.BID,
+            Book.title,
+            Author.auth_name.label("author"),
+            Publisher.pub_name.label("publisher"),
+            Genre.genre_name.label("genre"),
+            Borrower.borrower_name,
+            Borrower.borrower_date,
+            Borrower.return_date
+        )
+        .join(Author, Book.authID == Author.authID)
+        .join(Publisher, Book.pubID == Publisher.pubID)
+        .join(Genre, Book.genreID == Genre.genreID)
+        .outerjoin(Borrower, Book.BID == Borrower.BID)  # Left join borrower
+        .all()
+    )
 
+    # Convert to list of dicts
+    books_list = []
+    for b in books:
+        books_list.append({
+            "BID": b.BID,
+            "title": b.title,
+            "author": b.author,
+            "publisher": b.publisher,
+            "genre": b.genre,
+            "borrower_name": b.borrower_name,
+            "borrower_date": b.borrower_date.isoformat() if b.borrower_date else None,
+            "return_date": b.return_date.isoformat() if b.return_date else None,
+        })
+
+    return jsonify(books_list)
+
+@app.route('/api/books/<book_id>/borrow', methods=['POST'])
+def borrow_book(book_id):
+    book = Book.query.get(book_id)
+    if not book or not book.available:
+        return jsonify({'error': 'Book not available'}), 400
+
+    borrower_name = request.json.get('borrower_name', 'Anonymous')  # You can extend this later
+    borrow_date = date.today()
+    return_date = date.today()  # or borrow_date + timedelta(days=7)
+
+    # Generate BorrowerID (this is basic logic, feel free to improve)
+    borrower_id = f"BR{book_id[-3:]}"  # e.g., B105 → BR105
+
+    new_borrow = Borrower(
+        BorrowerID=borrower_id,
+        BID=book.BID,
+        borrower_name=borrower_name,
+        borrower_date=borrow_date,
+        return_date=return_date
+    )
+
+    book.available = False
+    db.session.add(new_borrow)
+    db.session.commit()
+    return jsonify({'message': f'Book {book_id} borrowed successfully'})
+
+
+@app.route('/api/books/<book_id>/return', methods=['POST'])
+def return_book(book_id):
+    book = Book.query.get(book_id)
+    if not book or book.available:
+        return jsonify({'error': 'Book is not borrowed'}), 400
+
+    # Find borrower record(s) for this book and delete them
+    borrowers = Borrower.query.filter_by(BID=book_id).all()
+    for borrower in borrowers:
+        db.session.delete(borrower)
+
+    # Mark book as available
+    book.available = True
+
+    db.session.commit()
+    return jsonify({'message': f'Book {book_id} returned successfully'})
 
 
 

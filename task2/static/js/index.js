@@ -1,3 +1,4 @@
+const borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
 window.onload = function () {
     fetch('/api/books')
         .then(response => response.json())
@@ -5,8 +6,6 @@ window.onload = function () {
             const bookTable = document.getElementById('book-table');
             const borrowBookSelect = document.getElementById('borrowBookId');
             const returnBookSelect = document.getElementById('returnBookId');
-
-            const borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
 
             borrowBookSelect.innerHTML = '<option value="">Select a Book</option>';
             returnBookSelect.innerHTML = '<option value="">Select a Book</option>';
@@ -21,17 +20,18 @@ window.onload = function () {
                 const row = document.createElement('tr');
                 row.setAttribute('data-id', id);
 
-                const isBorrowed = borrowingData[id] ? true : false;
+                const isBorrowed = book.borrower_name && book.borrower_date && book.return_date;
 
                 row.innerHTML = `<td>${id}</td>
-                                 <td>${title}</td>
-                                 <td>${authorName}</td>
-                                 <td>${publisherName}</td>
-                                 <td>${genreName}</td>
-                                 <td>${isBorrowed ? borrowingData[id].borrowerName : ''}</td>
-                                 <td>${isBorrowed ? borrowingData[id].borrowDate : ''}</td>
-                                 <td>${isBorrowed ? borrowingData[id].returnDate : ''}</td>
-                                 <td>${isBorrowed ? 'Borrowed' : 'Present'}</td>`;
+                                <td>${title}</td>
+                                <td>${authorName}</td>
+                                <td>${publisherName}</td>
+                                <td>${genreName}</td>
+                                <td>${isBorrowed ? book.borrower_name : ''}</td>
+                                <td>${isBorrowed ? book.borrower_date : ''}</td>
+                                <td>${isBorrowed ? book.return_date : ''}</td>
+                                <td>${isBorrowed ? 'Borrowed' : 'Present'}</td>`;
+
                 bookTable.appendChild(row);
 
                 if (!isBorrowed) {
@@ -79,13 +79,15 @@ document.getElementById('borrowForm').addEventListener('submit', function (event
         const returnDate = new Date(borrowDate);
         returnDate.setMonth(returnDate.getMonth() + 3);
 
+        // Optimistically update UI first
         row.cells[5].textContent = borrowerName;
         row.cells[6].textContent = borrowDate;
         row.cells[7].textContent = returnDate.toISOString().split('T')[0];
         row.cells[8].textContent = 'Borrowed';
         row.classList.add('borrowed');
 
-        const borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
+        // Update localStorage
+        let borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
         borrowingData[bookId] = {
             borrowerName: borrowerName,
             borrowDate: borrowDate,
@@ -93,6 +95,29 @@ document.getElementById('borrowForm').addEventListener('submit', function (event
         };
         localStorage.setItem('borrowingData', JSON.stringify(borrowingData));
 
+        // Send borrow info to backend
+        fetch(`/api/books/${bookId}/borrow`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                borrower_name: borrowerName,
+                borrower_date: borrowDate,
+                return_date: returnDate.toISOString().split('T')[0]
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to update borrow status on server');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Borrow status updated:', data);
+        })
+        .catch(error => {
+            alert('Error updating borrow status: ' + error.message);
+            // Optionally revert UI changes or reload page here
+        });
+
+        // Update select options
         const borrowBookSelect = document.getElementById('borrowBookId');
         const optionToRemove = borrowBookSelect.querySelector(`option[value="${bookId}"]`);
         if (optionToRemove) {
@@ -136,19 +161,40 @@ document.getElementById('returnForm').addEventListener('submit', function (event
             return;
         }
 
+        // Optimistically update UI first
         row.cells[5].textContent = '';
         row.cells[6].textContent = '';
         row.cells[7].textContent = '';
         row.cells[8].textContent = 'Present';
         row.classList.remove('borrowed');
 
-        const borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
+        // Update localStorage
+        let borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
         if (borrowingData[bookId]) {
-            borrowingData[bookId].returnDate = returnDateInput;
             delete borrowingData[bookId];
             localStorage.setItem('borrowingData', JSON.stringify(borrowingData));
         }
 
+        // Send return info to backend
+        fetch(`/api/books/${bookId}/return`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to update return status on server');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Return status updated:', data);
+        })
+        .catch(error => {
+            alert('Error updating return status: ' + error.message);
+            // Optionally revert UI changes or reload page here
+        });
+
+        // Update select options
         const returnBookSelect = document.getElementById('returnBookId');
         const optionToRemove = returnBookSelect.querySelector(`option[value="${bookId}"]`);
         if (optionToRemove) {

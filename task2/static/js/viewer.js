@@ -93,19 +93,20 @@ async function displayEntity(file, id) {
 
         // Borrowing Info for books
         if (file === 'books.xml') {
-            const borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
-            const borrowInfo = borrowingData[id];
-            if (borrowInfo) {
+            if (entity.borrower_name) {
                 htmlContent += `<h2>Borrowing Details</h2>
                 <ul>
-                    <li><strong>Borrower:</strong> ${borrowInfo.borrowerName}</li>
-                    <li><strong>Borrow Date:</strong> ${borrowInfo.borrowDate}</li>
-                    <li><strong>Return Date:</strong> ${borrowInfo.returnDate}</li>
-                </ul>`;
+                    <li><strong>Borrower:</strong> ${entity.borrower_name}</li>
+                    <li><strong>Borrow Date:</strong> ${entity.borrower_date}</li>
+                    <li><strong>Return Date:</strong> ${entity.return_date}</li>
+                </ul>
+                <button onclick="returnBook('${entity.BID}')">Return Book</button>`;
             } else {
-                htmlContent += `<p>This book is currently available for borrowing.</p>`;
+                htmlContent += `<p>This book is currently available for borrowing.</p>
+                <button onclick="borrowBook('${entity.BID}')">Borrow Book</button>`;
             }
         }
+
 
         htmlContent += `<a href="/" class="back-link">&larr; Back to Catalog</a>`;
         document.getElementById('content').innerHTML = htmlContent;
@@ -119,4 +120,38 @@ async function displayEntity(file, id) {
         console.error('Error displaying entity:', error);
         document.getElementById('content').innerHTML = `<p>Error loading entity details.</p>`;
     }
+    function borrowBook(BID) {
+    fetch(`/api/books/${BID}/borrow`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ borrower_name: 'Anonymous' })  // Replace with actual user input if needed
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || 'Book borrowed!');
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Borrow error:', error);
+        alert('Failed to borrow the book');
+    });
+}
+
+function returnBook(BID) {
+    fetch(`/api/books/${BID}/return`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || 'Book returned!');
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Return error:', error);
+        alert('Failed to return the book');
+    });
+}
+
 }
