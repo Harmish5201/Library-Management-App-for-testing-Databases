@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Config loading
 config = configparser.ConfigParser()
 
-config.read(r'C:\Users\prite\library_management_task\config.ini')
+config.read('config.ini')
 print("Sections loaded from config:", config.sections())
 
 
@@ -118,45 +118,6 @@ def get_books():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/description', methods=['GET'])
-def get_description():
-    entity_name = request.args.get('name')
-    if not entity_name:
-        return jsonify({'error': 'Missing entity name'}), 400
-
-    if not GEMINI_API_KEY or not GEMINI_API_URL:
-        return jsonify({'error': 'Gemini API configuration missing'}), 500
-
-    prompt = (
-        f"Provide a detailed description of '{entity_name}'. "
-        "If it is a book include information about the setting, characters, themes, key concepts, and its influence. "
-        "Do not include any concluding remarks or questions. "
-        "Do not mention any Note at the end about not including concluding remarks or questions."
-    )
-
-    payload = {
-        "contents": [
-            {"parts": [{"text": prompt}]}
-        ]
-    }
-
-    try:
-        response = requests.post(
-            f"{GEMINI_API_URL}?key={GEMINI_API_KEY}",
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
-        if response.status_code != 200:
-            logging.error("Gemini API error: %s", response.text)
-            return jsonify({'error': 'Failed to get description from Gemini'}), 500
-
-        data = response.json()
-        description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        return jsonify({'description': description})
-    except Exception as e:
-        logging.exception("Error connecting to Gemini API")
-        return jsonify({'error': 'Internal server error'}), 500
 
 
 if __name__ == '__main__':
