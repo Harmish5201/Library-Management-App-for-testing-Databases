@@ -4,6 +4,8 @@ from flask_cors import CORS
 import configparser
 import requests
 import logging
+import os
+
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 CORS(app)
@@ -13,8 +15,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Config loading
 config = configparser.ConfigParser()
-
-config.read('config.ini')
+config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+config.read(config_path)
 print("Sections loaded from config:", config.sections())
 
 
