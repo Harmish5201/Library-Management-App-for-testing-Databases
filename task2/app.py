@@ -7,6 +7,7 @@ import configparser
 import requests
 import logging
 import os
+from dateutil.relativedelta import relativedelta
 
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -84,12 +85,7 @@ class Borrower(db.Model):
     book = db.relationship('Book', backref='borrowers')
 
 
-class Librarian(db.Model):
-    __tablename__ = 'librarian'
-    librarianID = db.Column(db.String(5), primary_key=True)
-    librarian_name = db.Column(db.String(25), nullable=False)
-    shift = db.Column(db.String(10))
-    hire_date = db.Column(db.Date)
+
 
 # --- Routes ---
 
