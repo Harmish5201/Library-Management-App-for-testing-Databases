@@ -23,10 +23,10 @@ window.onload = function () {
                 const isBorrowed = book.borrower_name && book.borrower_date && book.return_date;
 
                 row.innerHTML = `<td>${id}</td>
-                                <td>${title}</td>
-                                <td>${authorName}</td>
-                                <td>${publisherName}</td>
-                                <td>${genreName}</td>
+                                <td><a href="/viewer.html?file=book&id=${id}">${title}</a></td>
+                                <td><a href="/viewer.html?file=author&id=${book.authID}">${authorName}</td>
+                                <td><a href="/viewer.html?file=publisher&id=${book.pubID}">${publisherName}</td>
+                                <td><a href="/viewer.html?file=genre&id=${book.genreID}">${genreName}</td>
                                 <td>${isBorrowed ? book.borrower_name : ''}</td>
                                 <td>${isBorrowed ? book.borrower_date : ''}</td>
                                 <td>${isBorrowed ? book.return_date : ''}</td>
@@ -86,14 +86,6 @@ document.getElementById('borrowForm').addEventListener('submit', function (event
         row.cells[8].textContent = 'Borrowed';
         row.classList.add('borrowed');
 
-        // Update localStorage
-        let borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
-        borrowingData[bookId] = {
-            borrowerName: borrowerName,
-            borrowDate: borrowDate,
-            returnDate: returnDate.toISOString().split('T')[0]
-        };
-        localStorage.setItem('borrowingData', JSON.stringify(borrowingData));
 
         // Send borrow info to backend
         fetch(`/api/books/${bookId}/borrow`, {
@@ -114,7 +106,6 @@ document.getElementById('borrowForm').addEventListener('submit', function (event
         })
         .catch(error => {
             alert('Error updating borrow status: ' + error.message);
-            // Optionally revert UI changes or reload page here
         });
 
         // Update select options
@@ -168,13 +159,6 @@ document.getElementById('returnForm').addEventListener('submit', function (event
         row.cells[8].textContent = 'Present';
         row.classList.remove('borrowed');
 
-        // Update localStorage
-        let borrowingData = JSON.parse(localStorage.getItem('borrowingData')) || {};
-        if (borrowingData[bookId]) {
-            delete borrowingData[bookId];
-            localStorage.setItem('borrowingData', JSON.stringify(borrowingData));
-        }
-
         // Send return info to backend
         fetch(`/api/books/${bookId}/return`, {
             method: 'POST',
@@ -191,7 +175,6 @@ document.getElementById('returnForm').addEventListener('submit', function (event
         })
         .catch(error => {
             alert('Error updating return status: ' + error.message);
-            // Optionally revert UI changes or reload page here
         });
 
         // Update select options
@@ -215,10 +198,17 @@ document.getElementById('returnForm').addEventListener('submit', function (event
     }
 });
 
-// Clear borrowing data from localStorage
+// Clear borrowing data
 document.getElementById('clearDataBtn').addEventListener('click', function () {
-    if (confirm('Are you sure you want to clear all borrowing data? This action cannot be undone.')) {
-        localStorage.removeItem('borrowingData');
-        location.reload();
-    }
+ if (!confirm('Are you sure you want to clear all borrow records?')) return;
+
+    fetch('/api/borrowers/clear', {
+        method: 'DELETE'
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Failed to clear borrow records');
+        return res.json();
+    })
+    .then(() => location.reload())
+    .catch(err => alert(err.message));
 });

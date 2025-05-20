@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from datetime import date
+from datetime import date, timedelta
 from flask import jsonify
 import configparser
 import requests
@@ -103,12 +103,16 @@ def viewer():
     return render_template('viewer.html')
 
 
+
 @app.route('/api/books')
 def get_books():
     books = (
         db.session.query(
             Book.BID,
             Book.title,
+            Book.authID,
+            Book.pubID,
+            Book.genreID,
             Author.auth_name.label("author"),
             Publisher.pub_name.label("publisher"),
             Genre.genre_name.label("genre"),
@@ -130,8 +134,11 @@ def get_books():
             "BID": b.BID,
             "title": b.title,
             "author": b.author,
+            "authID": b.authID,
             "publisher": b.publisher,
+            "pubID": b.pubID,
             "genre": b.genre,
+            "genreID": b.genreID,
             "borrower_name": b.borrower_name,
             "borrower_date": b.borrower_date.isoformat() if b.borrower_date else None,
             "return_date": b.return_date.isoformat() if b.return_date else None,
@@ -145,11 +152,11 @@ def borrow_book(book_id):
     if not book or not book.available:
         return jsonify({'error': 'Book not available'}), 400
 
-    borrower_name = request.json.get('borrower_name', 'Anonymous')  # You can extend this later
+    borrower_name = request.json.get('borrower_name', 'Anonymous') 
     borrow_date = date.today()
-    return_date = date.today()  # or borrow_date + timedelta(days=7)
+    return_date = borrow_date + timedelta(days=7)
 
-    # Generate BorrowerID (this is basic logic, feel free to improve)
+    # Generate BorrowerID
     borrower_id = f"BR{book_id[-3:]}"  # e.g., B105 → BR105
 
     new_borrow = Borrower(
@@ -182,6 +189,99 @@ def return_book(book_id):
 
     db.session.commit()
     return jsonify({'message': f'Book {book_id} returned successfully'})
+
+@app.route('/api/borrowers/clear', methods=['DELETE'])
+def clear_all_borrow_records():
+    try:
+        # Set all books as available again
+        borrowed_books = Borrower.query.all()
+        for record in borrowed_books:
+            book = Book.query.get(record.BID)
+            if book:
+                book.available = True
+
+        # Delete all borrower records
+        Borrower.query.delete()
+        db.session.commit()
+
+        return jsonify({'message': 'All borrow records cleared'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/books/<book_id>')
+def get_book(book_id):
+    book = (
+        db.session.query(
+            Book.BID,
+            Book.title,
+            Author.auth_name.label("author"),
+            Publisher.pub_name.label("publisher"),
+            Genre.genre_name.label("genre"),
+            Borrower.borrower_name,
+            Borrower.borrower_date,
+            Borrower.return_date
+        )
+        .join(Author, Book.authID == Author.authID)
+        .join(Publisher, Book.pubID == Publisher.pubID)
+        .join(Genre, Book.genreID == Genre.genreID)
+        .outerjoin(Borrower, Book.BID == Borrower.BID)
+        .filter(Book.BID == book_id)
+        .first()
+    )
+
+    if book:
+        return {
+            "BID": book.BID,
+            "title": book.title,
+            "author": book.author,
+            "publisher": book.publisher,
+            "genre": book.genre,
+            "borrower_name": book.borrower_name,
+            "borrower_date": book.borrower_date,
+            "return_date": book.return_date
+        }
+    else:
+        return {"error": "Book not found"}, 404
+
+@app.route('/api/authors/<auth_id>')
+def get_author(auth_id):
+    author = db.session.query(Author).filter(Author.authID == auth_id).first()
+
+    if author:
+        return {
+            "id": author.authID,
+            "name": author.auth_name,
+            "description": author.auth_desc
+        }
+    else:
+        return {"error": "Author not found"}, 404
+
+@app.route('/api/publishers/<pub_id>')
+def get_publisher(pub_id):
+    publisher = Publisher.query.filter_by(pubID=pub_id).first()
+
+    if publisher:
+        return {
+            "id": publisher.pubID,
+            "name": publisher.pub_name,
+            "description": publisher.pub_desc
+        }
+    else:
+        return {"error": "Publisher not found"}, 404
+
+@app.route('/api/genres/<genre_id>')
+def get_genre(genre_id):
+    genre = Genre.query.filter_by(genreID=genre_id).first()
+
+    if genre:
+        return {
+            "id": genre.genreID,
+            "name": genre.genre_name,
+            "description": genre.genre_desc
+        }
+    else:
+        return {"error": "Genre not found"}, 404
 
 
 
