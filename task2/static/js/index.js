@@ -216,9 +216,17 @@ document.getElementById('returnForm').addEventListener('submit', function (event
 });
 
 // Clear borrowing data from localStorage
-document.getElementById('clearDataBtn').addEventListener('click', function () {
-    if (confirm('Are you sure you want to clear all borrowing data? This action cannot be undone.')) {
-        localStorage.removeItem('borrowingData');
-        location.reload();
+document.querySelector("#clearDataBtn").addEventListener("click", async () => {
+    if (confirm("Are you sure you want to clear all borrowing data? This action cannot be undone.")) {
+        const res = await fetch("/api/clear", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        });
+        if (res.ok) {
+            alert("All borrowing data has been cleared.");
+            location.reload();
+        } else {
+            alert("Failed to clear borrowing data. Please try again.");
+        }
     }
 });

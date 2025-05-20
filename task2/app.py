@@ -7,6 +7,7 @@ import configparser
 import requests
 import logging
 import os
+from dateutil.relativedelta import relativedelta
 
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -142,7 +143,7 @@ def borrow_book(book_id):
 
     borrower_name = request.json.get('borrower_name', 'Anonymous')  # You can extend this later
     borrow_date = date.today()
-    return_date = date.today()  # or borrow_date + timedelta(days=7)
+    return_date = borrow_date + relativedelta(months=2)  # or borrow_date + timedelta(days=7)
 
     # Generate BorrowerID (this is basic logic, feel free to improve)
     borrower_id = f"BR{book_id[-3:]}"  # e.g., B105 → BR105
@@ -177,6 +178,19 @@ def return_book(book_id):
 
     db.session.commit()
     return jsonify({'message': f'Book {book_id} returned successfully'})
+
+@app.route('/api/clear', methods=['DELETE'])
+def clear_borrow_data():
+    try:
+        db.session.query(Borrower).delete()
+        for book in Book.query.all():
+            book.available = True
+        db.session.commit()
+        return jsonify({"message": "All borrow data cleared"}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error("Error clearing borrow data: %s", e)
+        return jsonify({"error": "Failed to clear borrowing data"}), 500
 
 
 
