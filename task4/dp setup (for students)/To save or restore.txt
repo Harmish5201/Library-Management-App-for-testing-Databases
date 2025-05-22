@@ -1,0 +1,11 @@
+To save:
+1. Open cmd
+2. Type: docker exec -t container-pg pg_dump -U admin -d postgres -F c -b -v -f /tmp/library_db.backup
+3. Type: docker cp container-pg:/tmp/library_db.backup "C:\Users\harmi\OneDrive\Documents\-STUDY\Sem 4\DBS\git\DBBD\task2\dp setup (for students)\library_db.backup" 
+3. Type: docker cp container-pg:/tmp/library_db.backup "C:\Users\prite\OneDrive\Desktop\DBS_prac\DBBD\task2\dp setup (for students)\library_db.backp"
+
+To restore:
+1. Open cmd
+2. Type: docker cp "C:/Users/harmi/OneDrive/Documents/-STUDY/Sem 4/DBS/git/DBBD/task2/dp setup (for students)/library_db.backup" container-pg:/tmp/library_db.backup
+2. Type: docker cp "C:/Users/prite/OneDrive/Desktop/DBS_prac/DBBD/task2/dp setup (for students)/library_db.backup" container-pg:/tmp/library_db.backup
+3. Type: docker exec -i container-pg pg_restore -U admin -d postgres -v /tmp/library_db.backup
