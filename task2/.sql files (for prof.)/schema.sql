@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
 -- Dumped by pg_dump version 17.4
 
--- Started on 2025-05-14 15:32:44 UTC
+-- Started on 2025-05-23 11:17:53 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -24,7 +24,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 218 (class 1259 OID 16400)
+-- TOC entry 217 (class 1259 OID 24577)
 -- Name: author; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -38,7 +38,7 @@ CREATE TABLE public.author (
 ALTER TABLE public.author OWNER TO admin;
 
 --
--- TOC entry 222 (class 1259 OID 16420)
+-- TOC entry 218 (class 1259 OID 24580)
 -- Name: books; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -55,7 +55,7 @@ CREATE TABLE public.books (
 ALTER TABLE public.books OWNER TO admin;
 
 --
--- TOC entry 217 (class 1259 OID 16395)
+-- TOC entry 219 (class 1259 OID 24583)
 -- Name: borrower; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -71,7 +71,7 @@ CREATE TABLE public.borrower (
 ALTER TABLE public.borrower OWNER TO admin;
 
 --
--- TOC entry 219 (class 1259 OID 16405)
+-- TOC entry 220 (class 1259 OID 24586)
 -- Name: genre; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -85,22 +85,7 @@ CREATE TABLE public.genre (
 ALTER TABLE public.genre OWNER TO admin;
 
 --
--- TOC entry 221 (class 1259 OID 16415)
--- Name: librarian; Type: TABLE; Schema: public; Owner: admin
---
-
-CREATE TABLE public.librarian (
-    "librarianID" character varying(5) NOT NULL,
-    librarian_name character varying(25) NOT NULL,
-    shift character varying(10),
-    hire_date date
-);
-
-
-ALTER TABLE public.librarian OWNER TO admin;
-
---
--- TOC entry 220 (class 1259 OID 16410)
+-- TOC entry 221 (class 1259 OID 24589)
 -- Name: publisher; Type: TABLE; Schema: public; Owner: admin
 --
 
@@ -114,7 +99,7 @@ CREATE TABLE public.publisher (
 ALTER TABLE public.publisher OWNER TO admin;
 
 --
--- TOC entry 3232 (class 2606 OID 16404)
+-- TOC entry 3226 (class 2606 OID 24593)
 -- Name: author author_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -123,7 +108,7 @@ ALTER TABLE ONLY public.author
 
 
 --
--- TOC entry 3240 (class 2606 OID 16424)
+-- TOC entry 3228 (class 2606 OID 24595)
 -- Name: books books_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -132,7 +117,7 @@ ALTER TABLE ONLY public.books
 
 
 --
--- TOC entry 3230 (class 2606 OID 16399)
+-- TOC entry 3230 (class 2606 OID 24597)
 -- Name: borrower borrower_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -141,7 +126,7 @@ ALTER TABLE ONLY public.borrower
 
 
 --
--- TOC entry 3234 (class 2606 OID 16409)
+-- TOC entry 3232 (class 2606 OID 24599)
 -- Name: genre genre_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -150,16 +135,7 @@ ALTER TABLE ONLY public.genre
 
 
 --
--- TOC entry 3238 (class 2606 OID 16419)
--- Name: librarian librarian_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
---
-
-ALTER TABLE ONLY public.librarian
-    ADD CONSTRAINT librarian_pkey PRIMARY KEY ("librarianID");
-
-
---
--- TOC entry 3236 (class 2606 OID 16414)
+-- TOC entry 3234 (class 2606 OID 24601)
 -- Name: publisher publisher_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -168,7 +144,7 @@ ALTER TABLE ONLY public.publisher
 
 
 --
--- TOC entry 3242 (class 2606 OID 16432)
+-- TOC entry 3235 (class 2606 OID 24602)
 -- Name: books books_author; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -177,7 +153,7 @@ ALTER TABLE ONLY public.books
 
 
 --
--- TOC entry 3243 (class 2606 OID 16442)
+-- TOC entry 3236 (class 2606 OID 24607)
 -- Name: books books_genre; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -186,7 +162,7 @@ ALTER TABLE ONLY public.books
 
 
 --
--- TOC entry 3244 (class 2606 OID 16437)
+-- TOC entry 3237 (class 2606 OID 24612)
 -- Name: books books_publisher; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -195,7 +171,7 @@ ALTER TABLE ONLY public.books
 
 
 --
--- TOC entry 3241 (class 2606 OID 16447)
+-- TOC entry 3238 (class 2606 OID 24617)
 -- Name: borrower borrower_books; Type: FK CONSTRAINT; Schema: public; Owner: admin
 --
 
@@ -203,7 +179,7 @@ ALTER TABLE ONLY public.borrower
     ADD CONSTRAINT borrower_books FOREIGN KEY ("BID") REFERENCES public.books("BID") NOT VALID;
 
 
--- Completed on 2025-05-14 15:32:44 UTC
+-- Completed on 2025-05-23 11:17:53 UTC
 
 --
 -- PostgreSQL database dump complete

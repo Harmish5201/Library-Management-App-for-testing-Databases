@@ -1,0 +1,15 @@
+{
+  "name": "task4",
+  "version": "1.0.0",
+  "description": "This is a web-based Library Management System built using **Flask**, **PostgreSQL**, and **Vanilla JS**. It allows users to view, borrow, return, and manage books within a library catalog, with metadata such as authors, publishers, and genres.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^8.15.0"
+  }
+}
