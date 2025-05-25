@@ -32,7 +32,7 @@ This is a web-based Library Management System built using **Flask**, **Neo4j**, 
    ```bash
    git clone https://github.com/Harmish5201/DBBD
    cd task3
-````
+   ````
 
 2. **Start Neo4j using Docker Compose**
 
@@ -52,7 +52,7 @@ This is a web-based Library Management System built using **Flask**, **Neo4j**, 
 
 4. **Initialize Neo4j data**
 
-   Open the Neo4j browser at [http://localhost:7474](http://localhost:7474), log in with the default credentials (`neo4j` / `password` unless changed), and run the Cypher queries from `init_neo4j.cypher` file to populate the database schema and initial data.
+   Open the Neo4j browser at [http://localhost:7474](http://localhost:7474), log in with the default credentials (`neo4j` / `test1234` unless changed), and run the Cypher queries from `init_neo4j.cypher` file to populate the database schema and initial data.
 
 5. **Run the server**
 
