@@ -1,6 +1,7 @@
 data/
 logs/
 plugins/
+mongo-data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
