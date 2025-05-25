@@ -1,27 +1,25 @@
 # 📚 Library Management Task
 
-This is a web-based Library Management System built using **Flask**, **PostgreSQL**, and **Vanilla JS**. It allows users to view, borrow, return, and manage books within a library catalog, with metadata such as authors, publishers, and genres.
+This is a web-based Library Management System built using **Flask**, **MongoDB**, and **Vanilla JS**. It allows users to view, borrow, return, and manage books within a library catalog, with metadata such as authors, publishers, and genres.
 
 ---
 
 ## 🚀 Features
 
--  View a full catalog of books with metadata
--  Borrow and return books with date management
--  View borrow status and due dates
--  Admin option to clear all borrow records
--  Dynamic viewer for book, author, publisher, and genre details
--  Integrates with Gemini API (optional) for enhanced content/description (placeholders in code)
+* View a full catalog of books with metadata
+* Borrow and return books with date tracking
+* View borrow status and due dates
+* Admin option to clear all borrow records
+* Dynamic viewer for book, author, publisher, and genre details
 
 ---
 
 ## ⚙️ Tech Stack
 
-- **Backend**: Flask (Python), SQLAlchemy ORM
-- **Frontend**: HTML/CSS + Vanilla JS
-- **Database**: PostgreSQL
-- **API Integration**: Gemini API (configurable)
-- **Others**: CORS, DOMPurify, Marked.js, configparser
+* **Backend**: Flask (Python), PyMongo
+* **Frontend**: HTML/CSS + Vanilla JS
+* **Database**: MongoDB (local or cloud)
+* **Others**: CORS, DOMPurify, Marked.js, Docker (optional for MongoDB)
 
 ---
 
@@ -31,40 +29,31 @@ This is a web-based Library Management System built using **Flask**, **PostgreSQ
 
    ```bash
    git clone https://github.com/Harmish5201/DBBD
-   cd task2
+   cd task4
    ```
 
-2. **Install Python packages**
+2. **Start Neo4j using Docker Compose**
+
+   Ensure Docker is installed and running. Then execute:
 
    ```bash
-   pip install flask flask_sqlalchemy flask_cors python-dateutil psycopg2-binary
+   docker-compose up -d
    ```
 
-3. **Create `config.ini` in root**
+   This will spin up a Neo4j instance with the configuration specified in `docker-compose.yaml`.
 
-   ```ini
-    [DB]
-    DB_NAME=postgres
-    DB_USER=admin
-    DB_PASSWORD=root
-    DB_HOST=127.0.0.1
-    DB_PORT=5432
-
-    [API]
-    GEMINI_API_KEY=AIzaSyAbZYfZ2DndbXt76PINdRRnlPM-0SVb3o8
-    GEMINI_API_URL=https://aistudio.google.com/app/apikey
-   ```
-
-4. **Create the database schema**
-
-   Ensure PostgreSQL is running, and run:
-   // or please refer to .sql files (for prof.) for manual installation
+3. **Install Python dependencies**
 
    ```bash
-   flask shell
-   >>> from app import db
-   >>> db.create_all()
-   >>> exit()
+   pip install flask flask_cors pymongo configparser
+   ```
+
+4. **Insert initial data**
+
+   Insert data into MongoDB using cmd
+   ```bash
+   cd "MongoDB init"
+   node init_mongo.js
    ```
 
 5. **Run the server**
@@ -73,31 +62,31 @@ This is a web-based Library Management System built using **Flask**, **PostgreSQ
    python app.py
    ```
 
-   Access at `http://localhost:5000`
-
+   Access the app at: [http://localhost:5000](http://localhost:5000)
 
 ---
 
 ## 💡 Notable Design & Implementation Decisions
 
-- **Borrow/Return Logic**: Each book can only be borrowed by one borrower at a time. The availability is tracked via the `available` boolean flag in the `Book` model.
+* **Borrow/Return Logic**
+  Books can only be borrowed if available. A borrow record is created and the book is marked unavailable.
 
-- **Relational Modeling**:
-  - Used `ForeignKey` and `relationship()` in SQLAlchemy to model relationships across `Book`, `Author`, `Publisher`, `Genre`, and `Borrower`.
-  - Implemented `outerjoin` to show all books even if they aren't currently borrowed.
+* **Document Modeling**
 
-- **Dynamic UI**:
-  - JavaScript dynamically updates available/borrowed books and controls the borrow/return actions.
-  - Borrow and return operations optimistically update the UI before confirming with the backend.
+  * Collections: `books`, `author`, `publisher`, `genre`, `borrower`
+  * Book metadata is linked via IDs (e.g. `authID`, `pubID`, etc.)
 
-- **BorrowerID Generation**:
-  - Borrower IDs are auto-generated based on the book ID for uniqueness and traceability.
+* **Dynamic UI**
+  JavaScript fetches API data and dynamically updates the catalog. UI reflects borrow/return status in real time.
 
-- **Data Reset Option**:
-  - An admin tool (`/api/borrowers/clear`) is exposed to clear all borrow records, useful for demos or resets.
+* **Borrower ID Generation**
+  Borrower ID is created using the last three characters of the book’s ID, prefixed with `BR`.
+
+* **Admin Reset**
+  `/api/borrowers/clear` resets all borrowing activity and sets all books as available.
 
 ---
 
-## 🧑‍💻 Author
+## 🧑‍💻 Authors
 
 Created by Harmish Tanna & Priyang Bhimani.

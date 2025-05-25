@@ -1,0 +1,11 @@
+"BID","authID","pubID","genreID","title","available"
+"B101","A02","P02","G02","Game of Codes",True
+"B105","A06","P06","G06","Murder on the Orient Express",True
+"B108","A02","P02","G02","Thrones and Codes",True
+"B109","A01","P01","G01","Gokuldham Diaries",True
+"B100","A01","P01","G01","tmkoc",True
+"B106","A07","P07","G07","The Sorcerer Quest",True
+"B103","A04","P04","G04","Python Programming",True
+"B102","A03","P03","G03","Linux Basics",True
+"B107","A03","P03","G03","Advanced Kernel Hacking",False
+"B104","A05","P05","G04","Flask in Action",True
