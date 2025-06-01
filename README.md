@@ -7,6 +7,5 @@ task3: Neo4j
 task4: MongoDB
 
 Group Members:
-
 Harmish Tanna: harmishhtanna@gmail.com <br>
 Priyang Himmatbhai Bhimani: prb5551@thi.de
