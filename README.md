@@ -1,4 +1,4 @@
-A team project to showcase database skills. 
+**A team project to showcase database skills. **
 
 Databases used:
 task1: ER Diagram
