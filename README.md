@@ -7,5 +7,5 @@ task3: Neo4j <br>
 task4: MongoDB <br>
 
 <h3> Credits: </h3>
-Harmish Tanna: harmishhtanna@gmail.com <br>
+Harmish Tanna: <a href="mailto:harmishhtanna@gmail.com">harmishhtanna@gmail.com</a> <br>
 Priyang Himmatbhai Bhimani: prb5551@thi.de
